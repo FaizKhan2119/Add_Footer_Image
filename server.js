@@ -18,7 +18,6 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
     const height = image.bitmap.height;
 
     const footer = new Jimp(width, footerHeight, '#ffffff');
-
     const footerText = `
 Name: ${name || 'N/A'}
 Contact: ${contact || 'N/A'}
@@ -40,4 +39,10 @@ Address: ${address || 'N/A'}
     console.error(err);
     res.status(500).json({ error: 'Something went wrong' });
   }
+});
+
+// ✅ Use Render's PORT env variable
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
