@@ -6,11 +6,14 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "axios": "^1.6.0",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "jimp": "^0.22.9",
     "multer": "^1.4.4",
-    "axios": "^1.6.0"
+    "@jimp/font-sans-32-black": "^0.22.9",
+    "@jimp/font-sans-48-black": "^0.22.9",
+    "@jimp/font-sans-64-black": "^0.22.9"
   }
 }
 
