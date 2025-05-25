@@ -27,46 +27,83 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
 
     const mainImage = await Jimp.read(imageBuffer);
     const width = mainImage.bitmap.width;
-    const footerHeight = 250;
+    const footerHeight = 300;
     const footer = new Jimp(width, footerHeight, '#DFF2F8');
 
     // Fonts
     const fontBig = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK);
-    const fontMed = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
+    const fontMed = await Jimp.loadFont(Jimp.FONT_SANS_48_BLACK);
     const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
 
     // Left Side: Person Image Circle (larger and more centered)
+    const personSize = 160;
+    const personX = 40;
+    const personY = (footerHeight - personSize) / 2;
+
     if (personImageUrl) {
       const personResp = await axios.get(personImageUrl, { responseType: 'arraybuffer' });
       const person = await Jimp.read(Buffer.from(personResp.data));
-      person.circle().resize(180, 180);
-      footer.composite(person, 100, 35);
+      person.circle().resize(personSize, personSize);
+      footer.composite(person, personX, personY);
     }
 
-    // Text: Center-aligned block but with left-indent
-    const textBlockWidth = 600;
-    const textX = (width - textBlockWidth) / 2;
-    let textY = 40;
+    // Right Side: Logo (center aligned vertically and moved slightly left)
+    const logoSize = 100;
+    const logoX = width - logoSize - 40;
+    const logoY = (footerHeight - logoSize) / 2;
 
-    footer.print(fontBig, textX, textY, { text: name, alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT });
-    textY += 70;
-    footer.print(fontMed, textX, textY, { text: title, alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT });
-    textY += 50;
-    footer.print(fontSmall, textX, textY, { text: phone, alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT });
-    textY += 40;
-    footer.print(fontSmall, textX, textY, { text: email, alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT });
-    textY += 40;
-    footer.print(fontSmall, textX, textY, { text: website, alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT });
-    textY += 40;
-    footer.print(fontSmall, textX, textY, { text: address, alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT });
-
-    // Right Side: Logo (more centered vertically)
     if (logoUrl) {
       const logoResp = await axios.get(logoUrl, { responseType: 'arraybuffer' });
       const logo = await Jimp.read(Buffer.from(logoResp.data));
-      logo.contain(100, 100);
-      footer.composite(logo, width - 160, 75);
+      logo.contain(logoSize, logoSize);
+      footer.composite(logo, logoX, logoY);
     }
+
+    // Text: Move more to center and leave margin from both images
+    const marginLeft = personX + personSize + 40;
+    const marginRight = logoSize + 80;
+    const textBlockWidth = width - marginLeft - marginRight;
+    const textX = marginLeft;
+    let textY = 40;
+
+    footer.print(fontBig, textX, textY, {
+      text: name,
+      alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT,
+      alignmentY: Jimp.VERTICAL_ALIGN_TOP
+    }, textBlockWidth);
+    textY += 70;
+
+    footer.print(fontMed, textX, textY, {
+      text: title,
+      alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT
+    }, textBlockWidth);
+    textY += 55;
+
+    footer.print(fontSmall, textX, textY, {
+      text: phone,
+      alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT
+    }, textBlockWidth);
+    textY += 40;
+
+    footer.print(fontSmall, textX, textY, {
+      text: website,
+      alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT
+    }, textBlockWidth);
+    textY += 40;
+
+    // Bottom Row: Email and Address Side-by-Side
+    const halfBlock = (textBlockWidth - 20) / 2;
+    const bottomY = footerHeight - 45;
+
+    footer.print(fontSmall, textX, bottomY, {
+      text: email,
+      alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT
+    }, halfBlock);
+
+    footer.print(fontSmall, textX + halfBlock + 20, bottomY, {
+      text: address,
+      alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT
+    }, halfBlock);
 
     // Combine base image and footer
     const finalImage = new Jimp(width, mainImage.bitmap.height + footerHeight);
