@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const Jimp = require('jimp');
 const multer = require('multer');
@@ -23,14 +22,17 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
     // Draw circular dark shapes on left and right
     const darkCircle = new Jimp(width, footerHeight, 0x064965FF);
     darkCircle.circle();
+
     footer.composite(darkCircle.clone().crop(0, 0, 300, footerHeight), -100, 0);
+
     const cropWidth = 300;
-const cropX = Math.max(0, width - cropWidth);
-footer.composite(
-  darkCircle.clone().crop(cropX, 0, cropWidth, footerHeight),
-  width - cropWidth + 50,
-  0
-);
+    const cropX = Math.max(0, width - cropWidth);
+    console.log(`Image width: ${width}, cropX: ${cropX}, cropWidth: ${cropWidth}`);
+    footer.composite(
+      darkCircle.clone().crop(cropX, 0, cropWidth, footerHeight),
+      width - cropWidth + 50,
+      0
+    );
 
     // Fonts
     const fontBig = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
