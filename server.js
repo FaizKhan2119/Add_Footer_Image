@@ -31,7 +31,7 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
 
     // ✅ Load fonts using built-in constants
     const fontBig = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK);
-    const fontMed = await Jimp.loadFont(Jimp.FONT_SANS_48_BLACK);
+    const fontMed = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
     const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
 
     // Left Side: Person Image Circle (larger and more centered)
