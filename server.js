@@ -8,106 +8,35 @@ const app = express();
 app.use(cors());
 const upload = multer({ storage: multer.memoryStorage() });
 
-app.post('/add-footer', upload.single('image'), async (req, res) => {
+app.post('/stitch-images', upload.single('image'), async (req, res) => {
   try {
-    const {
-      name,
-      title,
-      phone,
-      email,
-      website,
-      address,
-      logoUrl,
-      personImageUrl
-    } = req.body;
+    const { footerImageUrl } = req.body;
 
+    // 🧩 Step 1: Validate inputs
     const imageBuffer = req.file?.buffer;
-    if (!imageBuffer) return res.status(400).json({ error: 'Image is required' });
+    if (!imageBuffer) return res.status(400).json({ error: 'Main image is required' });
+    if (!footerImageUrl) return res.status(400).json({ error: 'Footer image URL is required' });
 
+    // 🧩 Step 2: Read both images
     const mainImage = await Jimp.read(imageBuffer);
-    const width = mainImage.bitmap.width;
-    const footerHeight = 340;
-    const footer = new Jimp(width, footerHeight, '#DFF2F8');
+    const footerResp = await axios.get(footerImageUrl, { responseType: 'arraybuffer' });
+    const footerImage = await Jimp.read(Buffer.from(footerResp.data));
 
-    // ✅ Load fonts using built-in constants
-    const fontBig = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK);
-    const fontMed = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
-    const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
-
-    // Left Side: Person Image Circle (larger and more centered)
-    const personSize = 160;
-    const personX = 40;
-    const personY = (footerHeight - personSize) / 2;
-
-    if (personImageUrl) {
-      const personResp = await axios.get(personImageUrl, { responseType: 'arraybuffer' });
-      const person = await Jimp.read(Buffer.from(personResp.data));
-      person.circle().resize(personSize, personSize);
-      footer.composite(person, personX, personY);
+    // 🧩 Step 3: Resize footer to match main image width
+    if (footerImage.bitmap.width !== mainImage.bitmap.width) {
+      footerImage.resize(mainImage.bitmap.width, Jimp.AUTO);
     }
 
-    // Right Side: Logo (center aligned vertically and moved slightly left)
-    const logoSize = 100;
-    const logoX = width - logoSize - 60;
-    const logoY = (footerHeight - logoSize) / 2;
+    // 🧩 Step 4: Create new image and stitch vertically
+    const finalImage = new Jimp(
+      mainImage.bitmap.width,
+      mainImage.bitmap.height + footerImage.bitmap.height
+    );
 
-    if (logoUrl) {
-      const logoResp = await axios.get(logoUrl, { responseType: 'arraybuffer' });
-      const logo = await Jimp.read(Buffer.from(logoResp.data));
-      logo.contain(logoSize, logoSize);
-      footer.composite(logo, logoX, logoY);
-    }
-
-    // Text: Move more to center and leave margin from both images
-    const marginLeft = personX + personSize + 50;
-    const marginRight = logoSize + 80;
-    const textBlockWidth = width - marginLeft - marginRight;
-    const textX = marginLeft;
-    let textY = 40;
-
-    footer.print(fontBig, textX, textY, {
-      text: name,
-      alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT,
-      alignmentY: Jimp.VERTICAL_ALIGN_TOP
-    }, textBlockWidth);
-    textY += 70;
-
-    footer.print(fontMed, textX, textY, {
-      text: title,
-      alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT
-    }, textBlockWidth);
-    textY += 55;
-
-    footer.print(fontSmall, textX, textY, {
-      text: phone,
-      alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT
-    }, textBlockWidth);
-    textY += 40;
-
-    footer.print(fontSmall, textX, textY, {
-      text: website,
-      alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT
-    }, textBlockWidth);
-
-    // Bottom Row: Email and Address Side-by-Side, placed horizontally at bottom
-    const bottomY = footerHeight - 60;
-    const halfBlock = (textBlockWidth - 20) / 2;
-
-    footer.print(fontSmall, textX, bottomY, {
-      text: email,
-      alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT
-    }, halfBlock);
-
-    footer.print(fontSmall, textX + halfBlock + 20, bottomY, {
-      text: address,
-      alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT
-    }, halfBlock);
-
-    // Combine base image and footer
-    const finalImage = new Jimp(width, mainImage.bitmap.height + footerHeight);
     finalImage.composite(mainImage, 0, 0);
-    finalImage.composite(footer, 0, mainImage.bitmap.height);
+    finalImage.composite(footerImage, 0, mainImage.bitmap.height);
 
+    // 🧩 Step 5: Send stitched image as binary
     const buffer = await finalImage.getBufferAsync(Jimp.MIME_JPEG);
     res.set('Content-Type', 'image/jpeg');
     res.send(buffer);
