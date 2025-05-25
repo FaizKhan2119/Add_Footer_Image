@@ -27,47 +27,48 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
 
     const mainImage = await Jimp.read(imageBuffer);
     const width = mainImage.bitmap.width;
-    const footerHeight = 240;
+    const footerHeight = 250;
     const footer = new Jimp(width, footerHeight, '#DFF2F8');
 
-    // Fonts (updated sizes)
-    const fontBig = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK);
-    const fontMed = await Jimp.loadFont(Jimp.FONT_SANS_48_BLACK);
-    const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
+    // Use built-in font and scale text manually
+    const baseFont = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
 
-    // Left Side: Person Image Circle (larger and more centered)
+    // Draw scaled text
+    const printText = async (text, scale, yOffset) => {
+      const temp = new Jimp(1, 1);
+      const textWidth = Jimp.measureText(baseFont, text);
+      const textHeight = Jimp.measureTextHeight(baseFont, text, textWidth);
+      const textImage = new Jimp(textWidth, textHeight);
+      textImage.print(baseFont, 0, 0, text);
+      textImage.scale(scale);
+      const x = (width - textImage.bitmap.width) / 2;
+      footer.composite(textImage, x, yOffset);
+      return yOffset + textImage.bitmap.height + 10;
+    };
+
+    // Left Side: Person Image Circle (larger and shifted right)
     if (personImageUrl) {
       const personResp = await axios.get(personImageUrl, { responseType: 'arraybuffer' });
       const person = await Jimp.read(Buffer.from(personResp.data));
       person.circle().resize(160, 160);
-      footer.composite(person, 60, 40);
+      footer.composite(person, 60, 45);
     }
 
-    // Centered Text Info Block
-    const textLines = [name, title, phone, email, website, address];
-    const textWidths = await Promise.all(textLines.map(line => Jimp.measureText(fontSmall, line)));
-    const maxWidth = Math.max(...textWidths);
-    const textX = (width - maxWidth) / 2 + 30; // shifted slightly to the right to avoid overlap
+    // Print all text lines
     let textY = 30;
-
-    footer.print(fontBig, textX, textY, name);
-    textY += 70;
-    footer.print(fontMed, textX, textY, title);
-    textY += 60;
-    footer.print(fontSmall, textX, textY, phone);
-    textY += 40;
-    footer.print(fontSmall, textX, textY, email);
-    textY += 40;
-    footer.print(fontSmall, textX, textY, website);
-    textY += 40;
-    footer.print(fontSmall, textX, textY, address);
+    textY = await printText(name, 2, textY);     // ~64px
+    textY = await printText(title, 1.5, textY);  // ~48px
+    textY = await printText(phone, 1, textY);    // ~32px
+    textY = await printText(email, 1, textY);
+    textY = await printText(website, 1, textY);
+    textY = await printText(address, 1, textY);
 
     // Right Side: Logo
     if (logoUrl) {
       const logoResp = await axios.get(logoUrl, { responseType: 'arraybuffer' });
       const logo = await Jimp.read(Buffer.from(logoResp.data));
       logo.contain(100, 100);
-      footer.composite(logo, width - 130, 70);
+      footer.composite(logo, width - 130, 60);
     }
 
     // Combine base image and footer
