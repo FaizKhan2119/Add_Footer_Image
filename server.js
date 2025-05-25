@@ -64,7 +64,7 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
     res.send(buffer);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Something went wrong' });
+    res.status(500).json({ error: 'Something went wrong', details: err.message });
   }
 });
 
