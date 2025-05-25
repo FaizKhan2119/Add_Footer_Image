@@ -27,13 +27,13 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
 
     const mainImage = await Jimp.read(imageBuffer);
     const width = mainImage.bitmap.width;
-    const footerHeight = 300;
+    const footerHeight = 340;
     const footer = new Jimp(width, footerHeight, '#DFF2F8');
 
     // Fonts
-    const fontBig = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK);
-    const fontMed = await Jimp.loadFont(Jimp.FONT_SANS_48_BLACK);
-    const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
+    const fontBig = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK.toString());
+    const fontMed = await Jimp.loadFont(Jimp.FONT_SANS_48_BLACK.toString());
+    const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK.toString());
 
     // Left Side: Person Image Circle (larger and more centered)
     const personSize = 160;
@@ -49,7 +49,7 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
 
     // Right Side: Logo (center aligned vertically and moved slightly left)
     const logoSize = 100;
-    const logoX = width - logoSize - 40;
+    const logoX = width - logoSize - 60;
     const logoY = (footerHeight - logoSize) / 2;
 
     if (logoUrl) {
@@ -60,7 +60,7 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
     }
 
     // Text: Move more to center and leave margin from both images
-    const marginLeft = personX + personSize + 40;
+    const marginLeft = personX + personSize + 50;
     const marginRight = logoSize + 80;
     const textBlockWidth = width - marginLeft - marginRight;
     const textX = marginLeft;
@@ -89,11 +89,10 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
       text: website,
       alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT
     }, textBlockWidth);
-    textY += 40;
 
-    // Bottom Row: Email and Address Side-by-Side
+    // Bottom Row: Email and Address Side-by-Side, placed horizontally at bottom
+    const bottomY = footerHeight - 60;
     const halfBlock = (textBlockWidth - 20) / 2;
-    const bottomY = footerHeight - 45;
 
     footer.print(fontSmall, textX, bottomY, {
       text: email,
