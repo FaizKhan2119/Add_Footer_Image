@@ -27,7 +27,7 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
 
     const mainImage = await Jimp.read(imageBuffer);
     const width = mainImage.bitmap.width;
-    const footerHeight = 220;
+    const footerHeight = 300;
     const footer = new Jimp(width, footerHeight, '#DFF2F8');
 
     // Fonts
@@ -39,7 +39,7 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
     if (personImageUrl) {
       const personResp = await axios.get(personImageUrl, { responseType: 'arraybuffer' });
       const person = await Jimp.read(Buffer.from(personResp.data));
-      person.circle().resize(160, 160);
+      person.circle().resize(220, 220);
       footer.composite(person, 30, 40);
     }
 
@@ -51,22 +51,22 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
     let textY = 40;
 
     footer.print(fontBig, textX, textY, name);
-    textY += 40;
+    textY += 60;
     footer.print(fontMed, textX, textY, title);
-    textY += 30;
+    textY += 50;
     footer.print(fontSmall, textX, textY, phone);
-    textY += 20;
+    textY += 40;
     footer.print(fontSmall, textX, textY, email);
-    textY += 20;
+    textY += 40;
     footer.print(fontSmall, textX, textY, website);
-    textY += 20;
+    textY += 40;
     footer.print(fontSmall, textX, textY, address);
 
     // Right Side: Logo
     if (logoUrl) {
       const logoResp = await axios.get(logoUrl, { responseType: 'arraybuffer' });
       const logo = await Jimp.read(Buffer.from(logoResp.data));
-      logo.contain(100, 100);
+      logo.contain(200, 200);
       footer.composite(logo, width - 130, 60);
     }
 
