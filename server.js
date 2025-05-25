@@ -1,65 +1,65 @@
+// server.js
 const express = require('express');
 const Jimp = require('jimp');
 const multer = require('multer');
 const cors = require('cors');
 const axios = require('axios');
-
 const app = express();
-app.use(cors());
 
+app.use(cors());
 const upload = multer({ storage: multer.memoryStorage() });
 
 app.post('/add-footer', upload.single('image'), async (req, res) => {
   try {
-    const { name, contact, email, address, companyName, logoUrl } = req.body;
+    const { name, title, phone, email, website, address, logoUrl, personImageUrl } = req.body;
     const imageBuffer = req.file?.buffer;
+    if (!imageBuffer) return res.status(400).json({ error: 'Image is required' });
 
-    if (!imageBuffer) {
-      return res.status(400).json({ error: 'Image is required' });
+    const mainImage = await Jimp.read(imageBuffer);
+    const width = mainImage.bitmap.width;
+    const footerHeight = 200;
+    const footer = new Jimp(width, footerHeight, '#C5EDF9');
+
+    // Draw circular dark shapes on left and right
+    const darkCircle = new Jimp(width, footerHeight, 0x064965FF);
+    darkCircle.circle();
+    footer.composite(darkCircle.clone().crop(0, 0, 300, footerHeight), -100, 0);
+    footer.composite(darkCircle.clone().crop(width - 250, 0, 300, footerHeight), width - 150, 0);
+
+    // Fonts
+    const fontBig = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
+    const fontMed = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
+
+    // Text
+    footer.print(fontBig, 220, 20, name);
+    footer.print(fontMed, 220, 60, title);
+    footer.print(fontMed, 220, 90, phone);
+    footer.print(fontMed, 220, 110, email);
+    footer.print(fontMed, 220, 130, website);
+    footer.print(fontMed, 220, 150, address);
+
+    // Person Image
+    if (personImageUrl) {
+      const personResp = await axios.get(personImageUrl, { responseType: 'arraybuffer' });
+      const person = await Jimp.read(Buffer.from(personResp.data));
+      person.circle().resize(120, 120);
+      mainImage.composite(person, 40, mainImage.bitmap.height - 60); // overlaps half in image
     }
 
-    const image = await Jimp.read(imageBuffer);
-    let logo = null;
-
+    // Logo on right
     if (logoUrl) {
-      try {
-        const response = await axios.get(logoUrl, { responseType: 'arraybuffer' });
-        logo = await Jimp.read(Buffer.from(response.data));
-      } catch (e) {
-        console.warn('Failed to load logo from URL:', logoUrl);
-      }
+      const logoResp = await axios.get(logoUrl, { responseType: 'arraybuffer' });
+      const logo = await Jimp.read(Buffer.from(logoResp.data));
+      logo.contain(80, 80);
+      footer.composite(logo, width - 120, 50);
     }
 
-    const footerHeight = 150;
-    const width = image.bitmap.width;
-    const height = image.bitmap.height;
+    // Combine
+    const finalImage = new Jimp(width, mainImage.bitmap.height + footerHeight);
+    finalImage.composite(mainImage, 0, 0);
+    finalImage.composite(footer, 0, mainImage.bitmap.height);
 
-    const footer = new Jimp(width, footerHeight, '#ffffff');
-    const font = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
-    const boldFont = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
-
-    // Two-column layout
-    const leftText = `Name: ${name || 'N/A'}\nContact: ${contact || 'N/A'}`;
-    const rightText = `Email: ${email || 'N/A'}\nAddress: ${address || 'N/A'}`;
-
-    footer.print(font, 10, 10, leftText);
-    footer.print(font, width / 2 + 10, 10, rightText);
-
-    // Logo and company name in footer center
-    if (logo) {
-      logo.resize(60, 60);
-      footer.composite(logo, width / 2 - 100, 80);
-    }
-
-    if (companyName) {
-      footer.print(boldFont, width / 2 - 30, 90, companyName);
-    }
-
-    const combined = new Jimp(width, height + footerHeight);
-    combined.composite(image, 0, 0);
-    combined.composite(footer, 0, height);
-
-    const buffer = await combined.getBufferAsync(Jimp.MIME_JPEG);
+    const buffer = await finalImage.getBufferAsync(Jimp.MIME_JPEG);
     res.set('Content-Type', 'image/jpeg');
     res.send(buffer);
   } catch (err) {
@@ -70,5 +70,5 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
