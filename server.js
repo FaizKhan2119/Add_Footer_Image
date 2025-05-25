@@ -51,15 +51,15 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
     let textY = 40;
 
     footer.print(fontBig, textX, textY, name);
-    textY += 40;
+    textY += 70;
     footer.print(fontMed, textX, textY, title);
-    textY += 30;
+    textY += 50;
     footer.print(fontSmall, textX, textY, phone);
-    textY += 20;
+    textY += 30;
     footer.print(fontSmall, textX, textY, email);
-    textY += 20;
+    textY += 30;
     footer.print(fontSmall, textX, textY, website);
-    textY += 20;
+    textY += 30;
     footer.print(fontSmall, textX, textY, address);
 
     // Right Side: Logo
