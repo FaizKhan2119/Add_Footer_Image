@@ -27,13 +27,13 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
 
     const mainImage = await Jimp.read(imageBuffer);
     const width = mainImage.bitmap.width;
-    const footerHeight = 300;
+    const footerHeight = 230;
     const footer = new Jimp(width, footerHeight, '#DFF2F8');
 
     // Fonts
-    const fontBig = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
-    const fontMed = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
-    const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_14_BLACK);
+    const fontBig = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK);
+    const fontMed = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
+    const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_28_BLACK);
 
     // Left Side: Person Image Circle (larger)
     if (personImageUrl) {
@@ -51,22 +51,22 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
     let textY = 40;
 
     footer.print(fontBig, textX, textY, name);
-    textY += 60;
+    textY += 40;
     footer.print(fontMed, textX, textY, title);
-    textY += 50;
+    textY += 30;
     footer.print(fontSmall, textX, textY, phone);
-    textY += 40;
+    textY += 20;
     footer.print(fontSmall, textX, textY, email);
-    textY += 40;
+    textY += 20;
     footer.print(fontSmall, textX, textY, website);
-    textY += 40;
+    textY += 20;
     footer.print(fontSmall, textX, textY, address);
 
     // Right Side: Logo
     if (logoUrl) {
       const logoResp = await axios.get(logoUrl, { responseType: 'arraybuffer' });
       const logo = await Jimp.read(Buffer.from(logoResp.data));
-      logo.contain(200, 200);
+      logo.contain(100, 100);
       footer.composite(logo, width - 130, 60);
     }
 
