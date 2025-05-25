@@ -31,9 +31,9 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
     const footer = new Jimp(width, footerHeight, '#DFF2F8');
 
     // Fonts
-    const fontBig = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK.toString());
-    const fontMed = await Jimp.loadFont(Jimp.FONT_SANS_48_BLACK.toString());
-    const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK.toString());
+    const fontBig = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK);
+    const fontMed = await Jimp.loadFont(Jimp.FONT_SANS_48_BLACK);
+    const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
 
     // Left Side: Person Image Circle (larger and more centered)
     const personSize = 160;
