@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const Jimp = require('jimp');
 const multer = require('multer');
@@ -30,10 +29,10 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
     const footerHeight = 340;
     const footer = new Jimp(width, footerHeight, '#DFF2F8');
 
-    // Fonts
-    const fontBig = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK);
-    const fontMed = await Jimp.loadFont(Jimp.FONT_SANS_48_BLACK);
-    const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
+    // Load fonts using require.resolve
+    const fontBig = await Jimp.loadFont(require.resolve('@jimp/font-sans-64-black'));
+    const fontMed = await Jimp.loadFont(require.resolve('@jimp/font-sans-48-black'));
+    const fontSmall = await Jimp.loadFont(require.resolve('@jimp/font-sans-32-black'));
 
     // Left Side: Person Image Circle (larger and more centered)
     const personSize = 160;
