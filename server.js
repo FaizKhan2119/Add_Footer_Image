@@ -1,3 +1,4 @@
+// server.js
 const express = require('express');
 const Jimp = require('jimp');
 const multer = require('multer');
@@ -10,59 +11,62 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 app.post('/add-footer', upload.single('image'), async (req, res) => {
   try {
-    const { name, title, phone, email, website, address, logoUrl, personImageUrl } = req.body;
+    const {
+      name,
+      title,
+      phone,
+      email,
+      website,
+      address,
+      logoUrl,
+      personImageUrl
+    } = req.body;
+
     const imageBuffer = req.file?.buffer;
     if (!imageBuffer) return res.status(400).json({ error: 'Image is required' });
 
     const mainImage = await Jimp.read(imageBuffer);
     const width = mainImage.bitmap.width;
     const footerHeight = 200;
-    const footer = new Jimp(width, footerHeight, '#C5EDF9');
-
-    // Draw circular dark shapes on left and right
-    const darkCircle = new Jimp(width, footerHeight, 0x064965FF);
-    darkCircle.circle();
-
-    footer.composite(darkCircle.clone().crop(0, 0, 300, footerHeight), -100, 0);
-
-    const cropWidth = 300;
-    const cropX = Math.max(0, width - cropWidth);
-    console.log(`Image width: ${width}, cropX: ${cropX}, cropWidth: ${cropWidth}`);
-    footer.composite(
-      darkCircle.clone().crop(cropX, 0, cropWidth, footerHeight),
-      width - cropWidth + 50,
-      0
-    );
+    const footer = new Jimp(width, footerHeight, '#DFF2F8');
 
     // Fonts
     const fontBig = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
     const fontMed = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
+    const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_14_BLACK);
 
-    // Text
-    footer.print(fontBig, 220, 20, name);
-    footer.print(fontMed, 220, 60, title);
-    footer.print(fontMed, 220, 90, phone);
-    footer.print(fontMed, 220, 110, email);
-    footer.print(fontMed, 220, 130, website);
-    footer.print(fontMed, 220, 150, address);
-
-    // Person Image
+    // Left Side: Person Image Circle
     if (personImageUrl) {
       const personResp = await axios.get(personImageUrl, { responseType: 'arraybuffer' });
       const person = await Jimp.read(Buffer.from(personResp.data));
       person.circle().resize(120, 120);
-      mainImage.composite(person, 40, mainImage.bitmap.height - 60); // overlaps half in image
+      footer.composite(person, 30, 40);
     }
 
-    // Logo on right
+    // Center Text Info Block
+    const textX = 170;
+    let textY = 40;
+    footer.print(fontBig, textX, textY, name);
+    textY += 40;
+    footer.print(fontMed, textX, textY, title);
+    textY += 30;
+    footer.print(fontSmall, textX, textY, phone);
+    textY += 20;
+    footer.print(fontSmall, textX, textY, email);
+    textY += 20;
+    footer.print(fontSmall, textX, textY, website);
+    textY += 20;
+    footer.print(fontSmall, textX, textY, address);
+
+    // Right Side: Logo
     if (logoUrl) {
       const logoResp = await axios.get(logoUrl, { responseType: 'arraybuffer' });
       const logo = await Jimp.read(Buffer.from(logoResp.data));
-      logo.contain(80, 80);
-      footer.composite(logo, width - 120, 50);
+      logo.contain(100, 100);
+      footer.composite(logo, width - 130, 50);
     }
 
-    // Combine
+    // Combine base image and footer
     const finalImage = new Jimp(width, mainImage.bitmap.height + footerHeight);
     finalImage.composite(mainImage, 0, 0);
     finalImage.composite(footer, 0, mainImage.bitmap.height);
