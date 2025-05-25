@@ -27,7 +27,7 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
 
     const mainImage = await Jimp.read(imageBuffer);
     const width = mainImage.bitmap.width;
-    const footerHeight = 200;
+    const footerHeight = 220;
     const footer = new Jimp(width, footerHeight, '#DFF2F8');
 
     // Fonts
@@ -35,17 +35,21 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
     const fontMed = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
     const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_14_BLACK);
 
-    // Left Side: Person Image Circle
+    // Left Side: Person Image Circle (larger)
     if (personImageUrl) {
       const personResp = await axios.get(personImageUrl, { responseType: 'arraybuffer' });
       const person = await Jimp.read(Buffer.from(personResp.data));
-      person.circle().resize(120, 120);
+      person.circle().resize(160, 160);
       footer.composite(person, 30, 40);
     }
 
-    // Center Text Info Block
-    const textX = 170;
+    // Centered Text Info Block
+    const textLines = [name, title, phone, email, website, address];
+    const textWidths = await Promise.all(textLines.map(line => Jimp.measureText(fontSmall, line)));
+    const maxWidth = Math.max(...textWidths);
+    const textX = (width - maxWidth) / 2;
     let textY = 40;
+
     footer.print(fontBig, textX, textY, name);
     textY += 40;
     footer.print(fontMed, textX, textY, title);
@@ -63,7 +67,7 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
       const logoResp = await axios.get(logoUrl, { responseType: 'arraybuffer' });
       const logo = await Jimp.read(Buffer.from(logoResp.data));
       logo.contain(100, 100);
-      footer.composite(logo, width - 130, 50);
+      footer.composite(logo, width - 130, 60);
     }
 
     // Combine base image and footer
