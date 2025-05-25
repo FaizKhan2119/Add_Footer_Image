@@ -24,7 +24,13 @@ app.post('/add-footer', upload.single('image'), async (req, res) => {
     const darkCircle = new Jimp(width, footerHeight, 0x064965FF);
     darkCircle.circle();
     footer.composite(darkCircle.clone().crop(0, 0, 300, footerHeight), -100, 0);
-    footer.composite(darkCircle.clone().crop(width - 250, 0, 300, footerHeight), width - 150, 0);
+    const cropWidth = 300;
+const cropX = Math.max(0, width - cropWidth);
+footer.composite(
+  darkCircle.clone().crop(cropX, 0, cropWidth, footerHeight),
+  width - cropWidth + 50,
+  0
+);
 
     // Fonts
     const fontBig = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
